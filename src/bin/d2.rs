@@ -1,17 +1,3 @@
-fn test<'a>(into_iter: impl IntoIterator<Item = &'a u32>, n: usize) -> bool {
-    let mut iter = into_iter.into_iter().enumerate();
-    let (_, mut a) = iter.nth(if n == 0 { 1 } else { 0 }).unwrap();
-    for (i, b) in iter {
-        if i != n && !(a < b && b - a <= 3) {
-            return true;
-        }
-        if i != n {
-            a = b;
-        }
-    }
-    false
-}
-
 fn main() -> eyre::Result<()> {
     let (mut ans1, mut ans2) = (0, 0);
     for line in aoc_2024::input!(2).lines() {
@@ -19,16 +5,18 @@ fn main() -> eyre::Result<()> {
             .split_ascii_whitespace()
             .map(|num| num.parse::<u32>())
             .collect::<Result<Vec<_>, _>>()?;
-        let nums = || nums.iter();
-        let n = nums().len();
-        let inc = (0..=n).take_while(|i| test(nums(), n - i)).count();
-        let dec = (0..=n).take_while(|i| test(nums().rev(), n - i)).count();
-        if inc == 0 || dec == 0 {
-            ans1 += 1;
-        }
-        if inc <= n || dec <= n {
-            ans2 += 1;
-        }
+        let crit = |f: fn(_, _) -> bool| {
+            let Some(p) = nums.windows(2).position(|w| !f(w[0], w[1])) else {
+                return 2;
+            };
+            (nums[p + 2..].windows(2).all(|w| f(w[0], w[1]))
+                && ((p == 0 || f(nums[p - 1], nums[p + 1]))
+                    && (p == nums.len() - 2 || f(nums[p + 1], nums[p + 2]))
+                    || (p == nums.len() - 2 || f(nums[p], nums[p + 2])))) as u32
+        };
+        let k = crit(|x, y| x < y && y - x <= 3).max(crit(|y, x| x < y && y - x <= 3));
+        ans1 += u32::from(k > 1);
+        ans2 += k.min(1);
     }
 
     println!("{ans1}\n{ans2}");
