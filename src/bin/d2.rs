@@ -1,10 +1,8 @@
 fn main() -> eyre::Result<()> {
     let (mut ans1, mut ans2) = (0, 0);
     for line in aoc_2024::input!(2).lines() {
-        let nums = line
-            .split_ascii_whitespace()
-            .map(|num| num.parse::<u32>())
-            .collect::<Result<Vec<_>, _>>()?;
+        let nums = line.split(' ').map(|num| num.parse::<u32>());
+        let nums = nums.collect::<Result<Vec<_>, _>>()?;
         let crit = |f: fn(_, _) -> bool| {
             let p = nums.windows(2).position(|w| !f(w[0], w[1]))?;
             let q = nums.windows(2).rposition(|w| !f(w[0], w[1]))?;
