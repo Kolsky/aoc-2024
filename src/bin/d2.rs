@@ -1,19 +1,15 @@
-fn test<'a>(
-    into_iter: impl IntoIterator<Item = &'a u32, IntoIter: ExactSizeIterator>,
-    n: usize,
-) -> usize {
+fn test<'a>(into_iter: impl IntoIterator<Item = &'a u32>, n: usize) -> bool {
     let mut iter = into_iter.into_iter().enumerate();
-    let len = iter.len();
     let (_, mut a) = iter.nth(if n == 0 { 1 } else { 0 }).unwrap();
     for (i, b) in iter {
         if i != n && !(a < b && b - a <= 3) {
-            return i;
+            return true;
         }
         if i != n {
             a = b;
         }
     }
-    len
+    false
 }
 
 fn main() -> eyre::Result<()> {
@@ -23,19 +19,15 @@ fn main() -> eyre::Result<()> {
             .split_ascii_whitespace()
             .map(|num| num.parse::<u32>())
             .collect::<Result<Vec<_>, _>>()?;
-        let ie = test(nums.iter(), nums.len());
-        let de = test(nums.iter().rev(), nums.len());
-        if [ie, de].contains(&nums.len()) {
+        let nums = || nums.iter();
+        let n = nums().len();
+        let inc = (0..=n).take_while(|i| test(nums(), n - i)).count();
+        let dec = (0..=n).take_while(|i| test(nums().rev(), n - i)).count();
+        if inc == 0 || dec == 0 {
             ans1 += 1;
+        }
+        if inc <= n || dec <= n {
             ans2 += 1;
-        } else {
-            let w = test(nums.iter(), ie - 1);
-            let x = test(nums.iter(), ie);
-            let y = test(nums.iter().rev(), de - 1);
-            let z = test(nums.iter().rev(), de);
-            if [w, x, y, z].contains(&nums.len()) {
-                ans2 += 1;
-            }
         }
     }
 
